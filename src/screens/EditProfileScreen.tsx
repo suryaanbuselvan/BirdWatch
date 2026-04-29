@@ -10,7 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'EditProfile'>;
 
 export default function EditProfileScreen({ navigation }: Props) {
-  const { userName, userAvatar, updateProfile } = useUser();
+  const { userName, userAvatar, updateProfile, signOut } = useUser();
   const { colors } = useTheme();
   
   const [nameInput, setNameInput] = useState(userName);
@@ -40,10 +40,14 @@ export default function EditProfileScreen({ navigation }: Props) {
     navigation.goBack();
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? 40 : 0 }]}>
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.container}
       >
         <View style={styles.header}>
@@ -96,8 +100,12 @@ export default function EditProfileScreen({ navigation }: Props) {
             <Text style={styles.saveButtonText}>Save Changes</Text>
           </LinearGradient>
         </TouchableOpacity>
+
+        <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+          <Text style={[styles.signOutText, { color: colors.error }]}>Sign Out</Text>
+        </TouchableOpacity>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -208,5 +216,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     letterSpacing: 0.5,
+  },
+  signOutButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 20,
+  },
+  signOutText: {
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

@@ -29,6 +29,8 @@ export default function IdentifyScreen({ navigation }: Props) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [scanMode, setScanMode] = useState<'camera' | 'audio'>('camera');
   const [result, setResult] = useState<IdentificationResult | null>(null);
+  const [lastCaptureUid, setLastCaptureUid] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(0);
   const { addBirdToCollection, analyzeImage } = useBirds();
   const { colors, theme } = useTheme();
 
@@ -61,6 +63,14 @@ export default function IdentifyScreen({ navigation }: Props) {
     }
   }, [scanMode, isAnalyzing]);
 
+  const animatedMockZoom = useAnimatedStyle(() => ({
+    transform: [{ scale: withTiming(1 + zoom * 2, { duration: 300 }) }]
+  }));
+
+  const animatedZoomGauge = useAnimatedStyle(() => ({
+    height: withTiming(`${zoom * 100}%`, { duration: 300 })
+  }));
+
   const handleCapture = async () => {
     if (isAnalyzing) return;
     
@@ -76,13 +86,13 @@ export default function IdentifyScreen({ navigation }: Props) {
       let photoUri = 'mock-uri';
       if (cameraRef.current) {
         try {
-          const photo = await cameraRef.current.takePictureAsync();
+          const photo = await cameraRef.current.takePictureAsync({
+            quality: 0.8,
+          });
           if (photo) photoUri = photo.uri;
         } catch (captureError) {
-          console.warn('Camera capture failed, falling back to mock:', captureError);
-          if (Platform.OS === 'web') {
-            photoUri = 'https://images.pexels.com/photos/1661179/pexels-photo-1661179.jpeg?auto=compress&cs=tinysrgb&w=1000';
-          }
+          console.warn('Camera capture failed:', captureError);
+          throw new Error('Camera capture failed. Please make sure camera permissions are granted and try again.');
         }
       }
 
@@ -102,10 +112,12 @@ export default function IdentifyScreen({ navigation }: Props) {
       scanProgress.value = 0;
 
       // 4. Auto-save to collection with real coordinates
-      await addBirdToCollection(analysisResult.bird, location ? {
+      const savedRecord = await addBirdToCollection(analysisResult.bird, location ? {
         latitude: location.coords.latitude,
         longitude: location.coords.longitude
       } : undefined);
+
+      setLastCaptureUid(savedRecord.uid);
 
     } catch (e: any) {
       console.error('Capture/ID Failed:', e);
@@ -117,7 +129,10 @@ export default function IdentifyScreen({ navigation }: Props) {
 
   const handleConfirm = () => {
     if (result) {
-      navigation.navigate('Details', { birdId: result.bird.id });
+      navigation.navigate('Details', { 
+        birdId: result.bird.id, 
+        captureUid: lastCaptureUid || undefined 
+      });
     }
   };
 
@@ -225,9 +240,12 @@ export default function IdentifyScreen({ navigation }: Props) {
     <View style={styles.container}>
       {(!permission?.granted) ? (
         <View style={styles.camera}>
-           <Image 
+           <Animated.Image 
             source={{ uri: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2000' }} 
-            style={StyleSheet.absoluteFill} 
+            style={[
+              StyleSheet.absoluteFill,
+              animatedMockZoom
+            ]} 
             resizeMode="cover" 
            />
            <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
@@ -246,7 +264,7 @@ export default function IdentifyScreen({ navigation }: Props) {
            )}
         </View>
       ) : (
-        <CameraView style={styles.camera} facing="back" ref={cameraRef} />
+        <CameraView style={styles.camera} facing="back" ref={cameraRef} zoom={zoom} pictureSize="640x480" />
       )}
 
       <View style={StyleSheet.absoluteFill}>
@@ -260,6 +278,50 @@ export default function IdentifyScreen({ navigation }: Props) {
                <View style={[styles.corner, styles.br]} />
             </View>
             <Text style={styles.instructionText}>Position bird within the frame</Text>
+          </View>
+        )}
+
+        {scanMode === 'camera' && !isAnalyzing && !result && (
+          <View style={styles.zoomControlsContainer}>
+            <View style={[styles.zoomSliderTrack, { backgroundColor: colors.surfaceGlass, borderColor: colors.glassStroke }]}>
+              <TouchableOpacity 
+                style={styles.zoomStep} 
+                onPress={() => setZoom(Math.min(1, zoom + 0.1))}
+              >
+                <Text style={{ color: '#FFF', fontSize: 20 }}>+</Text>
+              </TouchableOpacity>
+              
+              <View style={styles.zoomGauge}>
+                <Animated.View style={[styles.zoomGaugeFill, { backgroundColor: colors.primary }, animatedZoomGauge]} />
+              </View>
+
+              <TouchableOpacity 
+                style={styles.zoomStep} 
+                onPress={() => setZoom(Math.max(0, zoom - 0.1))}
+              >
+                <Text style={{ color: '#FFF', fontSize: 20 }}>−</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.presetsContainer}>
+              {[1, 2, 5].map((level) => (
+                <TouchableOpacity 
+                  key={level}
+                  onPress={() => setZoom(level === 1 ? 0 : (level === 2 ? 0.2 : 0.5))}
+                  style={[
+                    styles.presetBtn, 
+                    { 
+                      backgroundColor: (level === 1 && zoom === 0) || (level === 2 && zoom === 0.2) || (level === 5 && zoom === 0.5) 
+                        ? colors.primary 
+                        : colors.surfaceGlass,
+                      borderColor: colors.glassStroke
+                    }
+                  ]}
+                >
+                  <Text style={[styles.presetText, { color: '#FFF' }]}>{level}x</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         )}
 
@@ -354,4 +416,56 @@ const styles = StyleSheet.create({
   confirmBtnWrapper: { flex: 2, height: 64 },
   confirmBtn: { flex: 1, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   confirmBtnText: { color: '#FFF', fontSize: 18, fontWeight: '900' },
+  zoomControlsContainer: {
+    position: 'absolute',
+    right: 20,
+    top: '25%',
+    bottom: '35%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 20,
+  },
+  zoomSliderTrack: {
+    width: 44,
+    flex: 1,
+    borderRadius: 22,
+    borderWidth: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  zoomStep: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  zoomGauge: {
+    flex: 1,
+    width: 4,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 2,
+    marginVertical: 10,
+    justifyContent: 'flex-end',
+  },
+  zoomGaugeFill: {
+    width: '100%',
+    borderRadius: 2,
+  },
+  presetsContainer: {
+    gap: 12,
+  },
+  presetBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  presetText: {
+    fontSize: 13,
+    fontWeight: '900',
+  },
 });

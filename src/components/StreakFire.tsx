@@ -1,13 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { StyleSheet, View, Animated } from 'react-native';
+import { StyleSheet, View, Animated, Platform } from 'react-native';
 import LottieView from 'lottie-react-native';
 
 interface Props {
   trigger: boolean;
+  loop?: boolean;
+  streakLength?: number;
   onAnimationFinish?: () => void;
 }
 
-export default function StreakFire({ trigger, onAnimationFinish }: Props) {
+export default function StreakFire({ trigger, loop = false, streakLength = 0, onAnimationFinish }: Props) {
   const animationRef = useRef<LottieView>(null);
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
@@ -31,14 +33,30 @@ export default function StreakFire({ trigger, onAnimationFinish }: Props) {
     }
   }, [trigger]);
 
+  const getFireConfig = () => {
+    if (streakLength >= 7) {
+      return { color: '#3b82f6', filter: 'hue-rotate(180deg) brightness(1.5)', label: 'LEGENDARY' };
+    }
+    if (streakLength >= 3) {
+      return { color: '#f43f5e', filter: 'hue-rotate(320deg) brightness(1.2)', label: 'INTENSE' };
+    }
+    return { color: '#fbbf24', filter: 'none', label: 'ACTIVE' };
+  };
+
+  const fireConfig = getFireConfig();
+
   return (
     <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }]}>
       <LottieView
         ref={animationRef}
         source={{ uri: 'https://assets8.lottiefiles.com/packages/lf20_mYvpt9.json' }} // Fire animation
-        style={styles.lottie}
-        autoPlay={false}
-        loop={false}
+        style={[styles.lottie, Platform.OS === 'web' && { filter: fireConfig.filter }]}
+        autoPlay={trigger}
+        loop={loop}
+        colorFilters={[
+          { keypath: '*', color: fireConfig.color },
+          { keypath: 'Layer 1', color: fireConfig.color }
+        ]}
         onAnimationFinish={onAnimationFinish}
       />
     </Animated.View>
@@ -47,12 +65,10 @@ export default function StreakFire({ trigger, onAnimationFinish }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    width: 80,
-    height: 80,
+    width: 100,
+    height: 100,
     justifyContent: 'center',
     alignItems: 'center',
-    position: 'absolute',
-    top: -40, // Position above the streak number
     zIndex: 10,
   },
   lottie: {

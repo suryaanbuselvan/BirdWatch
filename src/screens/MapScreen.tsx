@@ -3,10 +3,18 @@ import { View, StyleSheet, Text } from 'react-native';
 import { useBirds } from '../context/BirdContext';
 import { useTheme } from '../context/ThemeContext';
 import MapComponent from '../components/MapComponent';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
 
 export default function MapScreen() {
   const { captureHistory } = useBirds();
   const { colors, theme } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const handleMarkerPress = (birdId: string, captureUid: string) => {
+    navigation.navigate('Details', { birdId, captureUid });
+  };
 
   // Custom Map Style for Dark Theme
   const mapStyle = theme === 'dark' ? [
@@ -35,7 +43,12 @@ export default function MapScreen() {
 
   return (
     <View style={styles.container}>
-      <MapComponent captureHistory={captureHistory} mapStyle={mapStyle} />
+      <MapComponent 
+        captureHistory={captureHistory} 
+        mapStyle={mapStyle} 
+        colors={colors}
+        onMarkerPress={handleMarkerPress} 
+      />
 
       <View style={[styles.headerOverlay, { backgroundColor: theme === 'dark' ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)' }]}>
         <Text style={[styles.title, { color: colors.text }]}>Discovery Map</Text>

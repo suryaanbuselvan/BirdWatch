@@ -1,5 +1,5 @@
 export const GEMINI_CONFIG = {
-  API_KEY: 'AIzaSyAOPSL4D1IQqTDLUe9-bTqkDegJUk_v8Eg',
+  API_KEY: 'AIzaSyCTBgtjpn6k0DYClWDiD2RM6aoCNVY023k',
   MODEL_NAME: 'gemini-flash-latest',
   INSTRUCTIONS: `
     You are an expert ornithologist specializing in precise species identification.

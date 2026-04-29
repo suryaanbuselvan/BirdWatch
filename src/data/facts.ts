@@ -1,0 +1,22 @@
+export const BIRD_FACTS = [
+  "A group of flamingos is called a 'flamboyance'.",
+  "Hummingbirds are the only birds that can fly backwards.",
+  "The Peregrine Falcon is the fastest bird (and fastest animal) in the world, reaching speeds of over 200 mph.",
+  "An ostrich's eye is bigger than its brain.",
+  "Woodpeckers can peck up to 20 times per second.",
+  "Crows are incredibly intelligent and can recognize individual human faces.",
+  "The Albatross can fly for years without ever touching land.",
+  "Owls have specialized feathers that allow them to fly almost completely silently.",
+  "A newborn kiwi chick is about 20% of its mother's body weight.",
+  "Penguins can't fly, but they can leap up to 6 feet out of the water.",
+  "Ravens are known to play tricks on each other and even use tools.",
+  "The heart rate of a hummingbird can reach up to 1,260 beats per minute.",
+  "Some swifts can fly for nearly 10 months without ever landing.",
+  "Bald eagles sometimes build nests that weigh as much as a ton.",
+  "Pigeons can do math! They've been shown to count and recognize numerical patterns.",
+  "The Bar-tailed Godwit holds the record for the longest non-stop flight: over 7,000 miles.",
+  "Lyrebirds can mimic almost any sound they hear, including chainsaws and camera shutters.",
+  "Cardinals like to 'ant'—they rub crushed ants on their feathers to kill lice.",
+  "A woodpecker's tongue is so long it actually wraps around its brain to protect it from impact.",
+  "Emperor penguins can dive to depths of 1,850 feet and stay submerged for 20 minutes."
+];

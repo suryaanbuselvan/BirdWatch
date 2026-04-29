@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -13,8 +14,11 @@ import DetailsScreen from '../screens/DetailsScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
 import MapScreen from '../screens/MapScreen';
 import BadgesScreen from '../screens/BadgesScreen';
+import MissionsScreen from '../screens/MissionsScreen';
 import IdentificationFailureScreen from '../screens/IdentificationFailureScreen';
+import SignInScreen from '../screens/SignInScreen';
 import { useTheme } from '../context/ThemeContext';
+import { useUser } from '../context/UserContext';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<MainTabParamList>();
@@ -66,35 +70,64 @@ function MainTabNavigator() {
 }
 
 export default function AppNavigator() {
+  const { isAuthenticated, isLoading } = useUser();
+  const { colors } = useTheme();
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="MainTabs" component={MainTabNavigator} />
-        <Stack.Screen 
-          name="Identify" 
-          component={IdentifyScreen} 
-          options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
-        />
-        <Stack.Screen 
-          name="Details" 
-          component={DetailsScreen} 
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen 
-          name="EditProfile" 
-          component={EditProfileScreen} 
-          options={{ presentation: 'formSheet' }}
-        />
-        <Stack.Screen 
-          name="Badges" 
-          component={BadgesScreen} 
-          options={{ presentation: 'modal' }}
-        />
-        <Stack.Screen 
-          name="IdentificationFailure" 
-          component={IdentificationFailureScreen} 
-          options={{ presentation: 'modal' }}
-        />
+        {!isAuthenticated ? (
+          <Stack.Screen 
+            name="SignIn" 
+            component={SignInScreen} 
+            options={{ animation: 'fade' }}
+          />
+        ) : (
+          <>
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            <Stack.Screen 
+              name="Identify" 
+              component={IdentifyScreen} 
+              options={{ presentation: 'fullScreenModal', animation: 'slide_from_bottom' }}
+            />
+            <Stack.Screen 
+              name="Details" 
+              component={DetailsScreen} 
+              options={{ presentation: 'modal' }}
+            />
+            <Stack.Screen 
+              name="EditProfile" 
+              component={EditProfileScreen} 
+              options={{ 
+                presentation: 'modal',
+                animation: 'slide_from_bottom'
+              }}
+            />
+            <Stack.Screen 
+              name="Badges" 
+              component={BadgesScreen} 
+              options={{ presentation: 'modal' }}
+            />
+            <Stack.Screen 
+              name="IdentificationFailure" 
+              component={IdentificationFailureScreen} 
+              options={{ presentation: 'modal' }}
+            />
+            <Stack.Screen 
+              name="Missions" 
+              component={MissionsScreen} 
+              options={{ presentation: 'card', animation: 'slide_from_right', headerShown: true, title: 'Quest Log' }}
+            />
+          </>
+        )}
       </Stack.Navigator>
     </NavigationContainer>
   );

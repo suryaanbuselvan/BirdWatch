@@ -1,5 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, Image } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useBirds, CaptureRecord } from '../context/BirdContext';
 import { useTheme } from '../context/ThemeContext';
@@ -7,13 +10,43 @@ import { useTheme } from '../context/ThemeContext';
 export default function CollectionScreen() {
   const { captureHistory } = useBirds();
   const { colors } = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const renderItem = ({ item }: { item: CaptureRecord }) => {
-    const { bird, timestamp } = item;
+    const { bird, timestamp, uid } = item;
     const captureDate = new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
 
+    const getRarityConfig = () => {
+      switch (bird.rarity) {
+        case 'Legendary': return { shadow: '#a855f7', aura: ['rgba(168, 85, 247, 0.15)', 'transparent'] };
+        case 'Rare': return { shadow: '#eab308', aura: ['rgba(234, 179, 8, 0.1)', 'transparent'] };
+        case 'Uncommon': return { shadow: '#2dd4bf', aura: ['rgba(45, 212, 191, 0.05)', 'transparent'] };
+        default: return { shadow: colors.cardShadow, aura: [colors.surface, colors.surface] };
+      }
+    };
+
+    const rarityConfig = getRarityConfig();
+
     return (
-      <View style={[styles.card, { backgroundColor: colors.surface, shadowColor: colors.cardShadow }]}>
+      <TouchableOpacity 
+        activeOpacity={0.7}
+        onPress={() => navigation.navigate('Details', { birdId: bird.id, captureUid: uid })}
+        style={[
+          styles.card, 
+          { 
+            backgroundColor: colors.surface, 
+            shadowColor: rarityConfig.shadow,
+            borderColor: bird.rarity === 'Legendary' ? '#a855f7' : bird.rarity === 'Rare' ? '#eab308' : 'transparent',
+            borderWidth: bird.rarity === 'Legendary' || bird.rarity === 'Rare' ? 1.5 : 0
+          }
+        ]}
+      >
+        <LinearGradient
+          colors={rarityConfig.aura}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0.5 }}
+          end={{ x: 1, y: 0.5 }}
+        />
         <Image source={{ uri: bird.imageUrl }} style={styles.thumbnail} />
         <View style={styles.cardContent}>
           <Text style={[styles.birdName, { color: colors.text }]}>{bird.name}</Text>
@@ -34,7 +67,7 @@ export default function CollectionScreen() {
             </View>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -103,10 +136,11 @@ const styles = StyleSheet.create({
   },
   card: {
     flexDirection: 'row',
-    borderRadius: 20,
+    borderRadius: 24,
     marginBottom: 20,
     padding: 14,
-    shadowOffset: { width: 0, height: 8 },
+    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 1,
     shadowRadius: 15,
     elevation: 8,

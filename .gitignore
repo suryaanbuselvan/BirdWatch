@@ -39,3 +39,16 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# local config
+src/config/ai.ts
+
+# APKs
+*.apk
+
+# test and temporary files
+test-*.js
+payload.json
+models.json
+v*.apk
+bird-watch-*.apk

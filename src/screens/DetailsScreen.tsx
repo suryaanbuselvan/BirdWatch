@@ -14,12 +14,28 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Details'>;
 const { height } = Dimensions.get('window');
 
 export default function DetailsScreen({ navigation, route }: Props) {
-  const birdId = route.params.birdId;
-  const bird = getBirdById(birdId);
+  const { birdId, captureUid } = route.params;
   const { colors, theme } = useTheme();
-   const { getSightingCount, captureHistory, userLevel, rankTitle, nextLevelProgress } = useBirds();
-   
-   const lastSighting = captureHistory.find(h => h.bird.id === birdId);
+  const { getSightingCount, captureHistory, userLevel, rankTitle, nextLevelProgress } = useBirds();
+  
+  // 1. Try to find the specific record if UID provided
+  let specificRecord = captureUid ? captureHistory.find(h => h.uid === captureUid) : null;
+  
+  // 2. Try to find bird in static database
+  let bird = getBirdById(birdId);
+  
+  // 3. Fallback to capture history (for dynamic Gemini-identified birds)
+  if (!bird && !specificRecord) {
+    specificRecord = captureHistory.find(h => h.bird.id === birdId) || null;
+  }
+
+  if (specificRecord) {
+    if (!bird) bird = specificRecord.bird;
+    // VERY IMPORTANT: Use the actual photo taken if this is a capture view
+    bird = { ...bird, imageUrl: specificRecord.bird.imageUrl || bird.imageUrl };
+  }
+
+  const lastSighting = specificRecord || captureHistory.find(h => h.bird.id === birdId);
   
   const xpOpacity = useSharedValue(0);
   const xpTranslateY = useSharedValue(0);

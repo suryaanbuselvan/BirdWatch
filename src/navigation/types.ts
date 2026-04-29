@@ -8,10 +8,12 @@ export type MainTabParamList = {
 };
 
 export type RootStackParamList = {
+  SignIn: undefined;
   MainTabs: undefined;
   Identify: undefined;
-  Details: { birdId: string };
+  Details: { birdId: string; captureUid?: string };
   EditProfile: undefined;
   Badges: undefined;
+  Missions: undefined;
   IdentificationFailure: { error?: string };
 };
